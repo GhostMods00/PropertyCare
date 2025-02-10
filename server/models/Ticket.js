@@ -1,0 +1,67 @@
+const mongoose = require('mongoose');
+
+const ticketSchema = new mongoose.Schema({
+  title: {
+    type: String,
+    required: [true, 'Please add a ticket title'],
+    trim: true,
+    maxlength: [100, 'Title cannot be more than 100 characters']
+  },
+  description: {
+    type: String,
+    required: [true, 'Please add a description'],
+    maxlength: [500, 'Description cannot be more than 500 characters']
+  },
+  property: {
+    type: mongoose.Schema.ObjectId,
+    ref: 'Property',
+    required: true
+  },
+  status: {
+    type: String,
+    enum: ['new', 'inProgress', 'completed'],
+    default: 'new'
+  },
+  priority: {
+    type: String,
+    enum: ['low', 'medium', 'high'],
+    default: 'medium'
+  },
+  imageUrl: {
+    type: String
+  },
+  createdBy: {
+    type: mongoose.Schema.ObjectId,
+    ref: 'User',
+    required: true
+  },
+  assignedTo: {
+    type: mongoose.Schema.ObjectId,
+    ref: 'User'
+  },
+  comments: [{
+    text: {
+      type: String,
+      required: true
+    },
+    createdBy: {
+      type: mongoose.Schema.ObjectId,
+      ref: 'User',
+      required: true
+    },
+    createdAt: {
+      type: Date,
+      default: Date.now
+    }
+  }],
+  createdAt: {
+    type: Date,
+    default: Date.now
+  },
+  updatedAt: {
+    type: Date,
+    default: Date.now
+  }
+});
+
+module.exports = mongoose.model('Ticket', ticketSchema);
