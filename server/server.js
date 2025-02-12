@@ -3,68 +3,74 @@ const dotenv = require('dotenv');
 const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
+const path = require('path');
 const connectDB = require('./config/db');
-const auth = require('./routes/auth');
-const properties = require('./routes/property');
 
 // Load env vars
-
 dotenv.config();
 
 // Connect to database
-
 connectDB();
 
 const app = express();
 
 // Middleware
-
-
 app.use(cors());
-
 app.use(helmet());
-
 app.use(express.json());
-
 app.use(express.urlencoded({ extended: true }));
 
 // Logger
-
 if (process.env.NODE_ENV === 'development') {
-
   app.use(morgan('dev'));
-
 }
 
-// Routes (I'll add these next)
+// Import routes
+const auth = require('./routes/auth');
+const properties = require('./routes/property');
+const tickets = require('./routes/ticket');
+
+// Mount routes
 app.use('/api/auth', auth);
+app.use('/api/properties', properties);
+app.use('/api/tickets', tickets);
 
-app.get('/', (req, res) => {
+// Serve static assets in production
+if (process.env.NODE_ENV === 'production') {
+  // Set static folder
+  app.use(express.static('client/dist'));
 
-  res.json({ message: 'Welcome to Property Care API' });
+  app.get('*', (req, res) => {
+    res.sendFile(path.resolve(__dirname, 'client', 'dist', 'index.html'));
+  });
+}
 
+// Error handler middleware
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({
+    success: false,
+    error: err.message || 'Server Error'
+  });
 });
 
-// Error handler middleware (I'll create this later)
-
-app.use((err, req, res, next) => {
-
-  console.error(err.stack);
-
-  res.status(500).json({
-
+// Handle unhandled routes
+app.use('*', (req, res) => {
+  res.status(404).json({
     success: false,
-
-    error: err.message || 'Server Error'
-
+    error: 'Route not found'
   });
-
 });
 
 const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
-
   console.log(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);
+});
 
+// Handle unhandled promise rejections
+process.on('unhandledRejection', (err, promise) => {
+  console.log(`Error: ${err.message}`);
+  // Close server & exit process
+  server.close(() => process.exit(1));
 });
