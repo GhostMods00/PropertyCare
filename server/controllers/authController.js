@@ -75,6 +75,22 @@ exports.login = async (req, res) => {
   }
 };
 
+// Getme Controller
+exports.getMe = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+    res.status(200).json({
+      success: true,
+      user
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: 'Error fetching user data'
+    });
+  }
+};
+
 // Helper function to get token and send response
 const sendTokenResponse = (user, statusCode, res) => {
   const token = user.getSignedJwtToken();

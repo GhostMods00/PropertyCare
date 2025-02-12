@@ -7,6 +7,19 @@ const propertySchema = new mongoose.Schema({
     trim: true,
     maxlength: [100, 'Name cannot be more than 100 characters']
   },
+  imageUrl: {
+    type: String,
+    default: 'no-photo.jpg'
+  },
+  type: {
+    type: String,
+    required: [true, 'Please add property type'],
+    enum: ['residential', 'commercial']
+  },
+  size: {
+    type: Number,
+    required: [true, 'Please add property size']
+  },
   address: {
     street: {
       type: String,
@@ -24,24 +37,6 @@ const propertySchema = new mongoose.Schema({
       type: String,
       required: [true, 'Please add a zip code']
     }
-  },
-  type: {
-    type: String,
-    required: [true, 'Please add property type'],
-    enum: ['residential', 'commercial']
-  },
-  size: {
-    type: Number,
-    required: [true, 'Please add property size in square feet']
-  },
-  imageUrl: {
-    type: String,
-    default: 'no-photo.jpg'
-  },
-  status: {
-    type: String,
-    enum: ['active', 'inactive'],
-    default: 'active'
   },
   owner: {
     type: mongoose.Schema.ObjectId,

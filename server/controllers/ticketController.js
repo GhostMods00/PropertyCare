@@ -1,5 +1,6 @@
 const Ticket = require('../models/Ticket');
 const Property = require('../models/Property');
+const { cloudinary } = require('../config/cloudinary');
 
 // @desc    Get all tickets
 // @route   GET /api/tickets
@@ -71,7 +72,6 @@ exports.getTicket = async (req, res) => {
 // @access  Private
 exports.createTicket = async (req, res) => {
   try {
-    // Add user to req.body
     req.body.createdBy = req.user.id;
 
     // Check if property exists
@@ -84,6 +84,12 @@ exports.createTicket = async (req, res) => {
     }
 
     const ticket = await Ticket.create(req.body);
+
+    // Handle image upload
+    if (req.file) {
+      ticket.imageUrl = req.file.path;
+      await ticket.save();
+    }
 
     res.status(201).json({
       success: true,
@@ -111,12 +117,23 @@ exports.updateTicket = async (req, res) => {
       });
     }
 
-    // Make sure user is authorized
-    if (req.user.role !== 'manager' && ticket.assignedTo.toString() !== req.user.id) {
+    // Check authorization
+    if (req.user.role !== 'manager' && 
+        ticket.assignedTo?.toString() !== req.user.id) {
       return res.status(401).json({
         success: false,
         error: 'Not authorized to update this ticket'
       });
+    }
+
+    // Handle image upload
+    if (req.file) {
+      // Delete old image if exists
+      if (ticket.imageUrl) {
+        const publicId = ticket.imageUrl.split('/').pop().split('.')[0];
+        await cloudinary.uploader.destroy(publicId);
+      }
+      req.body.imageUrl = req.file.path;
     }
 
     ticket = await Ticket.findByIdAndUpdate(
@@ -131,6 +148,48 @@ exports.updateTicket = async (req, res) => {
     res.status(200).json({
       success: true,
       data: ticket
+    });
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      error: error.message
+    });
+  }
+};
+
+// @desc    Delete ticket
+// @route   DELETE /api/tickets/:id
+// @access  Private
+exports.deleteTicket = async (req, res) => {
+  try {
+    const ticket = await Ticket.findById(req.params.id);
+
+    if (!ticket) {
+      return res.status(404).json({
+        success: false,
+        error: 'Ticket not found'
+      });
+    }
+
+    // Check authorization
+    if (req.user.role !== 'manager') {
+      return res.status(401).json({
+        success: false,
+        error: 'Not authorized to delete tickets'
+      });
+    }
+
+    // Delete image if exists
+    if (ticket.imageUrl) {
+      const publicId = ticket.imageUrl.split('/').pop().split('.')[0];
+      await cloudinary.uploader.destroy(publicId);
+    }
+
+    await ticket.deleteOne();
+
+    res.status(200).json({
+      success: true,
+      data: {}
     });
   } catch (error) {
     res.status(400).json({
