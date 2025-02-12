@@ -1,36 +1,23 @@
 const express = require('express');
 const router = express.Router();
-const cloudinaryConfig = require('../config/cloudinary');
+const { protect, authorize } = require('../middleware/auth');
+const { upload } = require('../config/cloudinary');
 const {
   getProperties,
   getProperty,
   createProperty,
   updateProperty,
-  deleteProperty,
-  uploadPropertyImage
+  deleteProperty
 } = require('../controllers/propertyController');
 
-const { protect, authorize } = require('../middleware/auth');
-
-// Basic routes
-router
-  .route('/')
+// routes are properly defined with their controller functions
+router.route('/')
   .get(protect, getProperties)
-  .post(protect, authorize('manager', 'admin'), createProperty);
+  .post(protect, authorize('manager'), upload.single('image'), createProperty);
 
-router
-  .route('/:id')
+router.route('/:id')
   .get(protect, getProperty)
-  .put(protect, authorize('manager', 'admin'), updateProperty)
-  .delete(protect, authorize('manager', 'admin'), deleteProperty);
-
-// Image upload route
-router.post(
-  '/:id/image',
-  protect,
-  authorize('manager', 'admin'),
-  cloudinaryConfig.upload.single('image'),
-  uploadPropertyImage
-);
+  .put(protect, authorize('manager'), upload.single('image'), updateProperty)
+  .delete(protect, authorize('manager'), deleteProperty);
 
 module.exports = router;

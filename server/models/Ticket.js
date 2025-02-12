@@ -9,8 +9,10 @@ const ticketSchema = new mongoose.Schema({
   },
   description: {
     type: String,
-    required: [true, 'Please add a description'],
-    maxlength: [500, 'Description cannot be more than 500 characters']
+    required: [true, 'Please add a description']
+  },
+  imageUrl: {
+    type: String
   },
   property: {
     type: mongoose.Schema.ObjectId,
@@ -26,9 +28,6 @@ const ticketSchema = new mongoose.Schema({
     type: String,
     enum: ['low', 'medium', 'high'],
     default: 'medium'
-  },
-  imageUrl: {
-    type: String
   },
   createdBy: {
     type: mongoose.Schema.ObjectId,
@@ -57,11 +56,7 @@ const ticketSchema = new mongoose.Schema({
   createdAt: {
     type: Date,
     default: Date.now
-  },
-  updatedAt: {
-    type: Date,
-    default: Date.now
   }
 });
 
-module.exports = mongoose.model('Ticket', ticketSchema);
+module.exports = mongoose.models.Ticket || mongoose.model('Ticket', ticketSchema);

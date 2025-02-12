@@ -11,17 +11,11 @@ cloudinary.config({
 const storage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: {
-    folder: 'maintenance-tickets',
-    allowed_formats: ['jpg', 'jpeg', 'png'],
-    transformation: [{ width: 800, height: 600, crop: 'limit' }]
+    folder: 'property-care',
+    allowed_formats: ['jpg', 'jpeg', 'png']
   }
 });
 
-const upload = multer({ 
-  storage: storage,
-  limits: {
-    fileSize: 5 * 1024 * 1024 // 5MB limit
-  }
-});
+const upload = multer({ storage: storage });
 
 module.exports = { upload, cloudinary };
