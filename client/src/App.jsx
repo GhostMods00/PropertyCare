@@ -27,17 +27,13 @@ function App() {
               </ProtectedRoute>
             }
           >
-            {/* Dashboard child routes */}
+            <Route index element={<div>Dashboard Home</div>} />
             <Route path="properties" element={<PropertyList />} />
             <Route path="properties/:id" element={<PropertyDetail />} />
-            {/* Add more dashboard routes as needed */}
             <Route path="maintenance" element={<div>Maintenance</div>} />
             <Route path="tenants" element={<div>Tenants</div>} />
             <Route path="settings" element={<div>Settings</div>} />
           </Route>
-
-          {/* 404 Route */}
-          <Route path="*" element={<div>Page not found</div>} />
         </Routes>
       </Router>
     </AuthProvider>
