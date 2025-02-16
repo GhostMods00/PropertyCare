@@ -10,6 +10,9 @@ import {
 const TicketCard = ({ ticket }) => {
   const navigate = useNavigate();
 
+  // Add console log for debugging
+  console.log('Ticket data:', ticket);
+
   const getStatusColor = (status) => {
     switch (status) {
       case 'new':
@@ -63,6 +66,21 @@ const TicketCard = ({ ticket }) => {
           {ticket.status.charAt(0).toUpperCase() + ticket.status.slice(1)}
         </div>
       </div>
+
+      {/* Image Section */}
+      {ticket.imageUrl && (
+        <div className="relative w-full h-48 mb-4">
+          <img 
+            src={ticket.imageUrl}
+            alt={ticket.title}
+            className="w-full h-full object-cover rounded-lg"
+            onError={(e) => {
+              console.error('Image failed to load:', ticket.imageUrl);
+              e.target.style.display = 'none';
+            }}
+          />
+        </div>
+      )}
 
       {/* Property Info */}
       <div className="flex items-center text-gray-400 mb-4">
