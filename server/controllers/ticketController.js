@@ -1,6 +1,7 @@
-const Ticket = require('../models/ticket');
+const Ticket = require('../models/Ticket');
 const Property = require('../models/Property');
 const { cloudinary } = require('../config/cloudinary');
+const User = require('../models/user');
 
 // @desc    Get all tickets
 // @route   GET /api/tickets

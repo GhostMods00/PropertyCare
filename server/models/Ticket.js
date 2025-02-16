@@ -31,12 +31,12 @@ const ticketSchema = new mongoose.Schema({
   },
   createdBy: {
     type: mongoose.Schema.ObjectId,
-    ref: 'User',
+    ref: 'user',    // Changed from 'User' to 'user'
     required: true
   },
   assignedTo: {
     type: mongoose.Schema.ObjectId,
-    ref: 'User'
+    ref: 'user'     // Changed from 'User' to 'user'
   },
   comments: [{
     text: {
@@ -45,7 +45,7 @@ const ticketSchema = new mongoose.Schema({
     },
     createdBy: {
       type: mongoose.Schema.ObjectId,
-      ref: 'User',
+      ref: 'user',  // Changed from 'User' to 'user'
       required: true
     },
     createdAt: {

@@ -1,5 +1,5 @@
 const jwt = require('jsonwebtoken');
-const User = require('../models/User');
+const User = require('../models/user');
 
 const protect = async (req, res, next) => {
   let token;
@@ -36,7 +36,7 @@ const authorize = (...roles) => {
     if (!roles.includes(req.user.role)) {
       return res.status(403).json({
         success: false,
-        error: `User role ${req.user.role} is not authorized to access this route`
+        error: `user role ${req.user.role} is not authorized to access this route`
       });
     }
     next();
