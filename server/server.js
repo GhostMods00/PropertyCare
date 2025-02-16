@@ -6,6 +6,7 @@ const morgan = require('morgan');
 const path = require('path');
 const connectDB = require('./config/db');
 
+
 // Load env vars
 dotenv.config();
 
@@ -14,38 +15,36 @@ connectDB();
 
 const app = express();
 
-// Body parser
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-
 // Middleware
 app.use(cors());
 app.use(helmet());
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 // Logger
 if (process.env.NODE_ENV === 'development') {
   app.use(morgan('dev'));
 }
 
-// File Upload
-app.use('/uploads', express.static('uploads'));
-
 // Import routes
-const authRoutes = require('./routes/auth');
-const userRoutes = require('./routes/users');
-const propertyRoutes = require('./routes/property');
-const ticketRoutes = require('./routes/ticket');
+const auth = require('./routes/auth');
+const properties = require('./routes/property');
+const tickets = require('./routes/ticket');
 
 // Mount routes
-app.use('/api/auth', authRoutes);
-app.use('/api/users', userRoutes);
-app.use('/api/properties', propertyRoutes);
-app.use('/api/tickets', ticketRoutes);
+app.use('/api/auth', auth);
+app.use('/api/properties', properties);
+app.use('/api/tickets', tickets);
 
-// Base route
-app.get('/', (req, res) => {
-  res.json({ message: 'Welcome to Property Maintenance API' });
-});
+// Serve static assets in production
+if (process.env.NODE_ENV === 'production') {
+  // Set static folder
+  app.use(express.static('client/dist'));
+
+  app.get('*', (req, res) => {
+    res.sendFile(path.resolve(__dirname, 'client', 'dist', 'index.html'));
+  });
+}
 
 // Error handler middleware
 app.use((err, req, res, next) => {
@@ -66,7 +65,7 @@ app.use('*', (req, res) => {
 
 const PORT = process.env.PORT || 5000;
 
-const server = app.listen(PORT, () => {
+app.listen(PORT, () => {
   console.log(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);
 });
 
@@ -76,5 +75,3 @@ process.on('unhandledRejection', (err, promise) => {
   // Close server & exit process
   server.close(() => process.exit(1));
 });
-
-module.exports = app;

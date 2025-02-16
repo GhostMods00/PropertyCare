@@ -1,4 +1,4 @@
-const Ticket = require('../models/Ticket');
+const Ticket = require('../models/ticket');
 const Property = require('../models/Property');
 const { cloudinary } = require('../config/cloudinary');
 
