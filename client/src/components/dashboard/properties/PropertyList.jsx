@@ -12,49 +12,32 @@ const PropertyList = () => {
 
   // Fetch properties
   useEffect(() => {
-    const fetchProperties = async () => {
-      try {
-        const response = await fetch('http://localhost:5000/api/properties', {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
-          }
-        });
-        const data = await response.json();
-        if (data.success) {
-          setProperties(data.data);
-        } else {
-          setError(data.error);
-        }
-      } catch (err) {
-        setError('Failed to fetch properties');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
     fetchProperties();
   }, []);
 
-  const handleAddProperty = async (propertyData) => {
+  const fetchProperties = async () => {
     try {
       const response = await fetch('http://localhost:5000/api/properties', {
-        method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify(propertyData)
+        }
       });
       const data = await response.json();
       if (data.success) {
-        setProperties([...properties, data.data]);
-        setIsAddModalOpen(false);
+        setProperties(data.data);
       } else {
         setError(data.error);
       }
     } catch (err) {
-      setError('Failed to add property');
+      setError('Failed to fetch properties');
+    } finally {
+      setIsLoading(false);
     }
+  };
+
+  const handleAddSuccess = (newProperty) => {
+    setProperties(prevProperties => [...prevProperties, newProperty]);
+    setIsAddModalOpen(false);
   };
 
   return (
@@ -98,7 +81,7 @@ const PropertyList = () => {
       <AddPropertyModal
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
-        onAdd={handleAddProperty}
+        onSuccess={handleAddSuccess}  // Changed from onAdd to onSuccess
       />
     </div>
   );

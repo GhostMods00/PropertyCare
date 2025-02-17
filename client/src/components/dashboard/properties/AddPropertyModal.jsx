@@ -23,6 +23,7 @@ const AddPropertyModal = ({ isOpen, onClose, onSuccess }) => {
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
+      console.log('Selected file:', file);
       if (file.size > 2 * 1024 * 1024) { // 2MB limit
         setError('Image size should be less than 2MB');
         return;
@@ -32,6 +33,7 @@ const AddPropertyModal = ({ isOpen, onClose, onSuccess }) => {
       const reader = new FileReader();
       reader.onloadend = () => {
         setImagePreview(reader.result);
+        console.log('Image preview created');
       };
       reader.readAsDataURL(file);
     }
@@ -58,10 +60,12 @@ const AddPropertyModal = ({ isOpen, onClose, onSuccess }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    e.stopPropagation();
     setIsLoading(true);
     setError(null);
 
     try {
+      console.log('Submitting property data:', formData);
       const formDataToSend = new FormData();
       
       // Append property data
@@ -72,6 +76,7 @@ const AddPropertyModal = ({ isOpen, onClose, onSuccess }) => {
 
       // Append image if exists
       if (selectedImage) {
+        console.log('Appending image to form data');
         formDataToSend.append('image', selectedImage);
       }
 
@@ -84,51 +89,60 @@ const AddPropertyModal = ({ isOpen, onClose, onSuccess }) => {
       });
 
       const data = await response.json();
+      console.log('Response received:', data);
       
       if (data.success) {
-        onSuccess();
+        onSuccess(data.data); // Pass the created property data
+        resetForm();
         onClose();
-        // Reset form
-        setFormData({
-          name: '',
-          type: 'residential',
-          size: '',
-          address: {
-            street: '',
-            city: '',
-            state: '',
-            zipCode: ''
-          }
-        });
-        setSelectedImage(null);
-        setImagePreview(null);
       } else {
-        setError(data.error);
+        throw new Error(data.error || 'Failed to create property');
       }
     } catch (err) {
-      setError('Failed to create property');
+      console.error('Error creating property:', err);
+      setError(err.message || 'Failed to create property');
     } finally {
       setIsLoading(false);
     }
   };
 
+  const resetForm = () => {
+    setFormData({
+      name: '',
+      type: 'residential',
+      size: '',
+      address: {
+        street: '',
+        city: '',
+        state: '',
+        zipCode: ''
+      }
+    });
+    setSelectedImage(null);
+    setImagePreview(null);
+    setError(null);
+  };
+
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-50 overflow-y-auto">
-          <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+        <div 
+          className="fixed inset-0 z-50 overflow-y-auto"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              onClose();
+            }
+          }}
+        >
+          <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center">
             {/* Background overlay */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               className="fixed inset-0 transition-opacity bg-black/50"
-              onClick={(e) => {
-                // Only close if clicking the backdrop itself
-                if (e.target === e.currentTarget) {
-                  onClose();
-                }
-              }}
+              onClick={(e) => e.stopPropagation()}
+              aria-hidden="true"
             />
 
             {/* Modal panel */}
@@ -136,7 +150,7 @@ const AddPropertyModal = ({ isOpen, onClose, onSuccess }) => {
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="inline-block w-full max-w-md p-6 my-8 overflow-hidden text-left align-middle transition-all transform bg-dark border border-dark-lighter rounded-lg shadow-xl relative"
+              className="inline-block w-full max-w-md p-6 my-8 overflow-hidden text-left align-middle transition-all transform bg-dark border border-dark-lighter rounded-lg shadow-xl relative z-50"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex justify-between items-center mb-4">
@@ -144,7 +158,10 @@ const AddPropertyModal = ({ isOpen, onClose, onSuccess }) => {
                   Add New Property
                 </h3>
                 <button
-                  onClick={onClose}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onClose();
+                  }}
                   className="text-gray-400 hover:text-white transition-colors"
                 >
                   <XMarkIcon className="h-6 w-6" />
@@ -166,6 +183,7 @@ const AddPropertyModal = ({ isOpen, onClose, onSuccess }) => {
                   <div className="flex items-center justify-center w-full">
                     <label
                       className="flex flex-col items-center justify-center w-full h-64 border-2 border-dashed rounded-lg cursor-pointer border-dark-lighter hover:border-primary/50"
+                      onClick={(e) => e.stopPropagation()}
                     >
                       <div className="flex flex-col items-center justify-center pt-5 pb-6">
                         {imagePreview ? (
@@ -191,6 +209,7 @@ const AddPropertyModal = ({ isOpen, onClose, onSuccess }) => {
                         className="hidden"
                         accept="image/*"
                         onChange={handleImageChange}
+                        onClick={(e) => e.stopPropagation()}
                       />
                     </label>
                   </div>
@@ -286,7 +305,10 @@ const AddPropertyModal = ({ isOpen, onClose, onSuccess }) => {
                 <div className="flex justify-end space-x-4 mt-6">
                   <button
                     type="button"
-                    onClick={onClose}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onClose();
+                    }}
                     className="px-4 py-2 text-gray-400 hover:text-white transition-colors"
                   >
                     Cancel
