@@ -68,14 +68,14 @@ const Home = () => {
               transition={{ duration: 0.8 }}
             >
               <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight">
-                <span className="block text-white">Streamline Your</span>
+                <span className="block text-white">Upgrade Your</span>
                 <span className="block mt-2 bg-gradient-to-r from-primary via-primary-light to-primary bg-clip-text text-transparent">
                   Property Management
                 </span>
               </h1>
               <p className="mt-6 text-lg md:text-xl text-gray-400 max-w-xl">
                 Take control of your properties with our comprehensive maintenance 
-                management system. Streamline operations, reduce costs, and improve tenant satisfaction.
+                management system. Smooth operations, reduce costs, and improve tenant satisfaction.
               </p>
               <div className="mt-8 flex flex-wrap gap-4">
                 <motion.div

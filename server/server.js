@@ -30,12 +30,12 @@ if (process.env.NODE_ENV === 'development') {
 const auth = require('./routes/auth');
 const properties = require('./routes/property');
 const tickets = require('./routes/ticket');
-
+const tenants = require('./routes/tenant');
 // Mount routes
 app.use('/api/auth', auth);
 app.use('/api/properties', properties);
 app.use('/api/tickets', tickets);
-
+app.use('/api/tenants', tenants);
 // Serve static assets in production
 if (process.env.NODE_ENV === 'production') {
   // Set static folder
