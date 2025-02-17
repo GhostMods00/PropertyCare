@@ -1,16 +1,18 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { PlusIcon, PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
+import { PlusIcon } from '@heroicons/react/24/outline';
 import PropertyCard from './PropertyCard';
 import AddPropertyModal from './AddPropertyModal';
+import EditPropertyModal from './EditPropertyModal';
 
 const PropertyList = () => {
   const [properties, setProperties] = useState([]);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingProperty, setEditingProperty] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Fetch properties
   useEffect(() => {
     fetchProperties();
   }, []);
@@ -40,10 +42,48 @@ const PropertyList = () => {
     setIsAddModalOpen(false);
   };
 
+  const handleEditSuccess = (updatedProperty) => {
+    setProperties(properties.map(property => 
+      property._id === updatedProperty._id ? updatedProperty : property
+    ));
+    setIsEditModalOpen(false);
+    setEditingProperty(null);
+  };
+
+  const handleEdit = (property) => {
+    setEditingProperty(property);
+    setIsEditModalOpen(true);
+  };
+
+  const handleDelete = async (propertyId) => {
+    if (window.confirm('Are you sure you want to delete this property?')) {
+      try {
+        const response = await fetch(`http://localhost:5000/api/properties/${propertyId}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        });
+
+        const data = await response.json();
+        if (data.success) {
+          setProperties(properties.filter(property => property._id !== propertyId));
+        } else {
+          setError(data.error);
+        }
+      } catch (err) {
+        setError('Failed to delete property');
+      }
+    }
+  };
+
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold text-white">Properties</h2>
+        <div>
+          <h2 className="text-2xl font-bold text-white">Properties</h2>
+          <p className="text-gray-400">Manage your property portfolio</p>
+        </div>
         <motion.button
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
@@ -65,23 +105,40 @@ const PropertyList = () => {
         <div className="flex justify-center items-center h-64">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
         </div>
+      ) : properties.length === 0 ? (
+        <div className="text-center py-12">
+          <p className="text-gray-400 text-lg">No properties found</p>
+          <p className="text-gray-500 mt-2">Add your first property to get started</p>
+        </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {properties.map((property) => (
             <PropertyCard
               key={property._id}
               property={property}
-              onUpdate={() => {/* Handle update */}}
-              onDelete={() => {/* Handle delete */}}
+              onUpdate={() => handleEdit(property)}
+              onDelete={() => handleDelete(property._id)}
             />
           ))}
         </div>
       )}
 
+      {/* Add Property Modal */}
       <AddPropertyModal
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
-        onSuccess={handleAddSuccess}  // Changed from onAdd to onSuccess
+        onSuccess={handleAddSuccess}
+      />
+
+      {/* Edit Property Modal */}
+      <EditPropertyModal
+        isOpen={isEditModalOpen}
+        onClose={() => {
+          setIsEditModalOpen(false);
+          setEditingProperty(null);
+        }}
+        onSuccess={handleEditSuccess}
+        property={editingProperty}
       />
     </div>
   );
