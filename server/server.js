@@ -6,12 +6,17 @@ const morgan = require('morgan');
 const path = require('path');
 const connectDB = require('./config/db');
 
-
 // Load env vars
 dotenv.config();
 
 // Connect to database
 connectDB();
+
+// Import models first (before routes)
+require('./models/user');  // Import User model first
+require('./models/Property');
+require('./models/Ticket');
+require('./models/Tenant');
 
 const app = express();
 
@@ -26,16 +31,20 @@ if (process.env.NODE_ENV === 'development') {
   app.use(morgan('dev'));
 }
 
-// Import routes
+// Import routes (after models)
 const auth = require('./routes/auth');
 const properties = require('./routes/property');
 const tickets = require('./routes/ticket');
 const tenants = require('./routes/tenant');
+const users = require('./routes/users');
+
 // Mount routes
 app.use('/api/auth', auth);
 app.use('/api/properties', properties);
 app.use('/api/tickets', tickets);
 app.use('/api/tenants', tenants);
+app.use('/api/users', users);
+
 // Serve static assets in production
 if (process.env.NODE_ENV === 'production') {
   // Set static folder
@@ -65,7 +74,7 @@ app.use('*', (req, res) => {
 
 const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);
 });
 

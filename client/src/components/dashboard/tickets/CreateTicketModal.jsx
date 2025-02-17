@@ -22,46 +22,55 @@ const CreateTicketModal = ({ isOpen, onClose, onSuccess }) => {
   });
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        // Fetch properties
-        const propertiesResponse = await fetch('http://localhost:5000/api/properties', {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
-          }
-        });
-        const propertiesData = await propertiesResponse.json();
-        
-        if (propertiesData.success) {
-          setProperties(propertiesData.data);
-          if (propertiesData.data.length > 0) {
-            setFormData(prev => ({ ...prev, property: propertiesData.data[0]._id }));
-          }
-        }
-
-        // Fetch maintenance staff if user is a manager
-        if (user.role === 'manager') {
-          const staffResponse = await fetch('http://localhost:5000/api/users/maintenance-staff', {
-            headers: {
-              'Authorization': `Bearer ${localStorage.getItem('token')}`
-            }
-          });
-          const staffData = await staffResponse.json();
-          
-          if (staffData.success) {
-            setMaintenanceStaff(staffData.data);
-          }
-        }
-      } catch (err) {
-        console.error('Error fetching data:', err);
-        setError('Failed to fetch required data');
-      }
-    };
-
     if (isOpen) {
       fetchData();
     }
-  }, [isOpen, user.role]);
+    return () => {
+      // Cleanup on modal close
+      resetForm();
+    };
+  }, [isOpen]);
+
+  const fetchData = async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const [propertiesResponse, staffResponse] = await Promise.all([
+        // Fetch properties
+        fetch('http://localhost:5000/api/properties', {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        }),
+        // Fetch maintenance staff if user is a manager
+        user.role === 'manager' ? fetch('http://localhost:5000/api/users/maintenance-staff', {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        }) : Promise.resolve(null)
+      ]);
+
+      const propertiesData = await propertiesResponse.json();
+      if (propertiesData.success) {
+        setProperties(propertiesData.data);
+        if (propertiesData.data.length > 0) {
+          setFormData(prev => ({ ...prev, property: propertiesData.data[0]._id }));
+        }
+      }
+
+      if (staffResponse) {
+        const staffData = await staffResponse.json();
+        if (staffData.success) {
+          setMaintenanceStaff(staffData.data);
+        }
+      }
+    } catch (err) {
+      console.error('Error fetching data:', err);
+      setError('Failed to fetch required data');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
@@ -86,12 +95,28 @@ const CreateTicketModal = ({ isOpen, onClose, onSuccess }) => {
       ...prev,
       [name]: value
     }));
+    // Clear any previous errors when user makes changes
+    setError(null);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    e.stopPropagation();
     setIsLoading(true);
     setError(null);
+
+    // Validate form data
+    if (!formData.property) {
+      setError('Please select a property');
+      setIsLoading(false);
+      return;
+    }
+
+    if (user.role === 'manager' && !formData.assignedTo) {
+      setError('Please assign the ticket to a staff member');
+      setIsLoading(false);
+      return;
+    }
 
     try {
       const formDataToSend = new FormData();
@@ -119,15 +144,15 @@ const CreateTicketModal = ({ isOpen, onClose, onSuccess }) => {
       const data = await response.json();
       
       if (data.success) {
-        onSuccess();
-        onClose();
+        onSuccess(data.data);
         resetForm();
+        onClose();
       } else {
-        setError(data.error || 'Failed to create ticket');
+        throw new Error(data.error || 'Failed to create ticket');
       }
     } catch (err) {
-      console.error('Error details:', err);
-      setError('Failed to create ticket');
+      console.error('Error creating ticket:', err);
+      setError(err.message || 'Failed to create ticket');
     } finally {
       setIsLoading(false);
     }
@@ -144,13 +169,14 @@ const CreateTicketModal = ({ isOpen, onClose, onSuccess }) => {
     });
     setSelectedImage(null);
     setImagePreview(null);
+    setError(null);
   };
 
   return (
     <AnimatePresence>
       {isOpen && (
         <div className="fixed inset-0 z-50 overflow-y-auto">
-          <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+          <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center">
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -167,7 +193,7 @@ const CreateTicketModal = ({ isOpen, onClose, onSuccess }) => {
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="inline-block w-full max-w-md p-6 my-8 overflow-hidden text-left align-middle transition-all transform bg-dark border border-dark-lighter rounded-lg shadow-xl relative"
+              className="inline-block w-full max-w-md p-6 my-8 overflow-hidden text-left align-middle transition-all transform bg-dark border border-dark-lighter rounded-lg shadow-xl relative z-10"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex justify-between items-center mb-4">
@@ -175,7 +201,10 @@ const CreateTicketModal = ({ isOpen, onClose, onSuccess }) => {
                   Create New Ticket
                 </h3>
                 <button
-                  onClick={onClose}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onClose();
+                  }}
                   className="text-gray-400 hover:text-white transition-colors"
                 >
                   <XMarkIcon className="h-6 w-6" />
@@ -217,6 +246,7 @@ const CreateTicketModal = ({ isOpen, onClose, onSuccess }) => {
                         className="hidden"
                         accept="image/*"
                         onChange={handleImageChange}
+                        onClick={(e) => e.stopPropagation()}
                       />
                     </label>
                   </div>
@@ -266,6 +296,7 @@ const CreateTicketModal = ({ isOpen, onClose, onSuccess }) => {
                       value={formData.assignedTo}
                       onChange={handleChange}
                       className="w-full px-3 py-2 bg-dark-lighter border border-dark-lighter rounded-lg text-white focus:outline-none focus:border-primary"
+                      required
                     >
                       <option value="">Select Staff Member</option>
                       {maintenanceStaff.map((staff) => (
@@ -302,7 +333,7 @@ const CreateTicketModal = ({ isOpen, onClose, onSuccess }) => {
                     value={formData.description}
                     onChange={handleChange}
                     rows="4"
-                    className="w-full px-3 py-2 bg-dark-lighter border border-dark-lighter rounded-lg text-white focus:outline-none focus:border-primary"
+                    className="w-full px-3 py-2 bg-dark-lighter border border-dark-lighter rounded-lg text-white focus:outline-none focus:border-primary resize-none"
                     required
                   />
                 </div>
@@ -310,7 +341,10 @@ const CreateTicketModal = ({ isOpen, onClose, onSuccess }) => {
                 <div className="flex justify-end space-x-4 mt-6">
                   <button
                     type="button"
-                    onClick={onClose}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onClose();
+                    }}
                     className="px-4 py-2 text-gray-400 hover:text-white transition-colors"
                   >
                     Cancel

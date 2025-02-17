@@ -1,7 +1,7 @@
 const Ticket = require('../models/Ticket');
 const Property = require('../models/Property');
-const { cloudinary } = require('../config/cloudinary');
 const User = require('../models/user');
+const { cloudinary } = require('../config/cloudinary');
 
 // @desc    Get all tickets
 // @route   GET /api/tickets
@@ -23,7 +23,8 @@ exports.getTickets = async (req, res) => {
     const tickets = await query
       .populate('property', 'name address')
       .populate('createdBy', 'name')
-      .populate('assignedTo', 'name');
+      .populate('assignedTo', 'name')
+      .sort({ createdAt: -1 }); // Most recent first
 
     res.status(200).json({
       success: true,
@@ -31,9 +32,10 @@ exports.getTickets = async (req, res) => {
       data: tickets
     });
   } catch (error) {
+    console.error('Error fetching tickets:', error);
     res.status(400).json({
       success: false,
-      error: error.message
+      error: 'Failed to fetch tickets'
     });
   }
 };
@@ -56,14 +58,23 @@ exports.getTicket = async (req, res) => {
       });
     }
 
+    // Verify authorization
+    if (req.user.role === 'staff' && ticket.assignedTo?.toString() !== req.user.id) {
+      return res.status(403).json({
+        success: false,
+        error: 'Not authorized to view this ticket'
+      });
+    }
+
     res.status(200).json({
       success: true,
       data: ticket
     });
   } catch (error) {
+    console.error('Error fetching ticket:', error);
     res.status(400).json({
       success: false,
-      error: error.message
+      error: 'Failed to fetch ticket'
     });
   }
 };
@@ -73,10 +84,10 @@ exports.getTicket = async (req, res) => {
 // @access  Private
 exports.createTicket = async (req, res) => {
   try {
-    req.body.createdBy = req.user.id;
+    const { property: propertyId, assignedTo: staffId } = req.body;
 
     // Check if property exists
-    const property = await Property.findById(req.body.property);
+    const property = await Property.findById(propertyId);
     if (!property) {
       return res.status(404).json({
         success: false,
@@ -84,7 +95,22 @@ exports.createTicket = async (req, res) => {
       });
     }
 
-    const ticket = await Ticket.create(req.body);
+    // If assigning to staff, verify staff exists and is active
+    if (staffId) {
+      const staff = await User.findOne({ _id: staffId, role: 'staff', status: 'active' });
+      if (!staff) {
+        return res.status(400).json({
+          success: false,
+          error: 'Invalid or inactive staff member'
+        });
+      }
+    }
+
+    // Create ticket
+    const ticket = await Ticket.create({
+      ...req.body,
+      createdBy: req.user.id
+    });
 
     // Handle image upload
     if (req.file) {
@@ -92,14 +118,21 @@ exports.createTicket = async (req, res) => {
       await ticket.save();
     }
 
+    // Populate ticket data
+    const populatedTicket = await Ticket.findById(ticket._id)
+      .populate('property', 'name address')
+      .populate('createdBy', 'name')
+      .populate('assignedTo', 'name');
+
     res.status(201).json({
       success: true,
-      data: ticket
+      data: populatedTicket
     });
   } catch (error) {
+    console.error('Error creating ticket:', error);
     res.status(400).json({
       success: false,
-      error: error.message
+      error: error.message || 'Failed to create ticket'
     });
   }
 };
@@ -119,48 +152,67 @@ exports.updateTicket = async (req, res) => {
     }
 
     // Check authorization
-    if (req.user.role !== 'manager' && 
-        ticket.assignedTo?.toString() !== req.user.id) {
-      return res.status(401).json({
+    if (req.user.role !== 'manager' && ticket.assignedTo?.toString() !== req.user.id) {
+      return res.status(403).json({
         success: false,
         error: 'Not authorized to update this ticket'
       });
     }
 
+    // If staff, only allow status updates
+    if (req.user.role === 'staff') {
+      if (Object.keys(req.body).some(key => key !== 'status')) {
+        return res.status(403).json({
+          success: false,
+          error: 'Staff can only update ticket status'
+        });
+      }
+    }
+
     // Handle image upload
     if (req.file) {
-      // Delete old image if exists
       if (ticket.imageUrl) {
-        const publicId = ticket.imageUrl.split('/').pop().split('.')[0];
-        await cloudinary.uploader.destroy(publicId);
+        try {
+          const publicId = ticket.imageUrl.split('/').pop().split('.')[0];
+          await cloudinary.uploader.destroy(publicId);
+        } catch (error) {
+          console.error('Error deleting old image:', error);
+        }
       }
       req.body.imageUrl = req.file.path;
     }
 
+    // Update ticket
     ticket = await Ticket.findByIdAndUpdate(
       req.params.id,
-      { ...req.body, updatedAt: Date.now() },
+      { 
+        ...req.body,
+        updatedAt: Date.now()
+      },
       {
         new: true,
         runValidators: true
       }
-    );
+    ).populate('property', 'name address')
+     .populate('createdBy', 'name')
+     .populate('assignedTo', 'name');
 
     res.status(200).json({
       success: true,
       data: ticket
     });
   } catch (error) {
+    console.error('Error updating ticket:', error);
     res.status(400).json({
       success: false,
-      error: error.message
+      error: error.message || 'Failed to update ticket'
     });
   }
 };
 
 // @desc    Delete ticket
 // @route   DELETE /api/tickets/:id
-// @access  Private
+// @access  Private/Manager
 exports.deleteTicket = async (req, res) => {
   try {
     const ticket = await Ticket.findById(req.params.id);
@@ -174,7 +226,7 @@ exports.deleteTicket = async (req, res) => {
 
     // Check authorization
     if (req.user.role !== 'manager') {
-      return res.status(401).json({
+      return res.status(403).json({
         success: false,
         error: 'Not authorized to delete tickets'
       });
@@ -182,8 +234,12 @@ exports.deleteTicket = async (req, res) => {
 
     // Delete image if exists
     if (ticket.imageUrl) {
-      const publicId = ticket.imageUrl.split('/').pop().split('.')[0];
-      await cloudinary.uploader.destroy(publicId);
+      try {
+        const publicId = ticket.imageUrl.split('/').pop().split('.')[0];
+        await cloudinary.uploader.destroy(publicId);
+      } catch (error) {
+        console.error('Error deleting image:', error);
+      }
     }
 
     await ticket.deleteOne();
@@ -193,9 +249,10 @@ exports.deleteTicket = async (req, res) => {
       data: {}
     });
   } catch (error) {
+    console.error('Error deleting ticket:', error);
     res.status(400).json({
       success: false,
-      error: error.message
+      error: 'Failed to delete ticket'
     });
   }
 };
@@ -214,6 +271,14 @@ exports.addComment = async (req, res) => {
       });
     }
 
+    // Verify authorization
+    if (req.user.role === 'staff' && ticket.assignedTo?.toString() !== req.user.id) {
+      return res.status(403).json({
+        success: false,
+        error: 'Not authorized to comment on this ticket'
+      });
+    }
+
     const comment = {
       text: req.body.text,
       createdBy: req.user.id
@@ -222,14 +287,22 @@ exports.addComment = async (req, res) => {
     ticket.comments.push(comment);
     await ticket.save();
 
+    // Return populated ticket
+    const populatedTicket = await Ticket.findById(ticket._id)
+      .populate('property', 'name address')
+      .populate('createdBy', 'name')
+      .populate('assignedTo', 'name')
+      .populate('comments.createdBy', 'name');
+
     res.status(200).json({
       success: true,
-      data: ticket
+      data: populatedTicket
     });
   } catch (error) {
+    console.error('Error adding comment:', error);
     res.status(400).json({
       success: false,
-      error: error.message
+      error: 'Failed to add comment'
     });
   }
 };
