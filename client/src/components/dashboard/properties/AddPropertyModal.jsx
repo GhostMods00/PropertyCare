@@ -80,7 +80,7 @@ const AddPropertyModal = ({ isOpen, onClose, onSuccess }) => {
         formDataToSend.append('image', selectedImage);
       }
 
-      const response = await fetch('https://propertycare.onrender.com', {
+      const response = await fetch('https://propertycare.onrender.com/api/properties', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
