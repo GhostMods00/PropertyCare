@@ -1,6 +1,6 @@
 const Ticket = require('../models/Ticket');
 const Property = require('../models/Property');
-const User = require('../models/user');
+const User = require('../models/User');
 const { cloudinary } = require('../config/cloudinary');
 
 // @desc    Get all tickets
