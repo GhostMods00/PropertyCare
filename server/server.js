@@ -13,7 +13,7 @@ dotenv.config();
 connectDB();
 
 // Import models first (before routes)
-require('./models/user');  // Import User model first
+require('./models/User'); 
 require('./models/Property');
 require('./models/Ticket');
 require('./models/Tenant');
