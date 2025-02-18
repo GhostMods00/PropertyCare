@@ -42,7 +42,7 @@ const Settings = () => {
     setSuccessMessage('');
 
     try {
-      const response = await fetch('http://localhost:5000/api/users/profile', {
+      const response = await fetch('https://propertycare.onrender.com/api/users/profile', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -77,7 +77,7 @@ const Settings = () => {
     setSuccessMessage('');
 
     try {
-      const response = await fetch('http://localhost:5000/api/users/change-password', {
+      const response = await fetch('https://propertycare.onrender.com/api/users/change-password', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -114,7 +114,7 @@ const Settings = () => {
     setSuccessMessage('');
 
     try {
-      const response = await fetch('http://localhost:5000/api/users/notifications', {
+      const response = await fetch('https://propertycare.onrender.com/api/users/notifications', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

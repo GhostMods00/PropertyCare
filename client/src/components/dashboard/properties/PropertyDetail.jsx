@@ -22,7 +22,7 @@ const PropertyDetail = () => {
   useEffect(() => {
     const fetchProperty = async () => {
       try {
-        const response = await fetch(`http://localhost:5000/api/properties/${id}`, {
+        const response = await fetch(`https://propertycare.onrender.com/api/properties/${id}`, {
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`
           }

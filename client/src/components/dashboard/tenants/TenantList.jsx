@@ -27,7 +27,7 @@ const TenantList = () => {
 
   const fetchTenants = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/tenants', {
+      const response = await fetch('https://propertycare.onrender.com/api/tenants', {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
@@ -47,7 +47,7 @@ const TenantList = () => {
 
   const fetchProperties = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/properties', {
+      const response = await fetch('https://propertycare.onrender.com/api/properties', {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }

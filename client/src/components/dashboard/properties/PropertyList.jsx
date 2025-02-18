@@ -19,7 +19,7 @@ const PropertyList = () => {
 
   const fetchProperties = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/properties', {
+      const response = await fetch('https://propertycare.onrender.com/api/properties', {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
@@ -58,7 +58,7 @@ const PropertyList = () => {
   const handleDelete = async (propertyId) => {
     if (window.confirm('Are you sure you want to delete this property?')) {
       try {
-        const response = await fetch(`http://localhost:5000/api/properties/${propertyId}`, {
+        const response = await fetch(`https://propertycare.onrender.com/api/properties/${propertyId}`, {
           method: 'DELETE',
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`
