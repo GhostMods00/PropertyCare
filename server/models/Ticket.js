@@ -31,12 +31,12 @@ const ticketSchema = new mongoose.Schema({
   },
   createdBy: {
     type: mongoose.Schema.ObjectId,
-    ref: 'user',    // Changed from 'User' to 'user'
+    ref: 'User',    
     required: true
   },
   assignedTo: {
     type: mongoose.Schema.ObjectId,
-    ref: 'user'     // Changed from 'User' to 'user'
+    ref: 'User'     
   },
   comments: [{
     text: {
