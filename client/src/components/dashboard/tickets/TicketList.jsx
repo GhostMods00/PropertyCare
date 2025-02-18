@@ -31,7 +31,7 @@ const TicketList = () => {
   const fetchTickets = async () => {
     try {
       setIsLoading(true);
-      const response = await fetch('http://localhost:5000/api/tickets', {
+      const response = await fetch('https://propertycare.onrender.com/api/tickets', {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
