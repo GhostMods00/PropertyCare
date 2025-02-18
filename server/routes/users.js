@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { protect, authorize } = require('../middleware/auth');
-const User = require('../models/user');
+const User = require('../models/User');
 
 // Get maintenance staff
 router.get('/maintenance-staff', protect, async (req, res) => {

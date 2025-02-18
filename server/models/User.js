@@ -146,4 +146,4 @@ userSchema.statics.getMaintenanceStaff = function() {
   }).select('name email phone');
 };
 
-module.exports = mongoose.model('user', userSchema);
+module.exports = mongoose.model('User', userSchema);
