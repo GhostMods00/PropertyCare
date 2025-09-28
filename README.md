@@ -9,8 +9,6 @@ A comprehensive property maintenance management system designed to streamline op
 
 
 
-![App Screenshot](https://i.imgur.com/BUP5NON.png)
-![App Screenshot](https://i.imgur.com/mOE280U.jpeg)
 
 
 ## 🎯 Overview
